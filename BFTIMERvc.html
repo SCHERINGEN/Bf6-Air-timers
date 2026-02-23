@@ -29,6 +29,13 @@
       flex-wrap: wrap;
       justify-content: center;
     }
+        .toggles {
+      display: flex;
+      width: auto;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
 
     .add-btn,
     .clear-btn {
@@ -224,10 +231,18 @@
       font-style: italic;
     }
 
-    .delete-btn {
+
+    .card-actions {
       position: absolute;
       top: 8px;
       right: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10;
+    }
+
+    .action-btn {
       width: 48px;
       height: 48px;
       border-radius: 50%;
@@ -236,10 +251,42 @@
       color: white;
       cursor: pointer;
       z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
     }
 
-    .delete-btn:hover {
+    .action-btn.delete:hover {
       background: #dc2626;
+    }
+
+    .action-btn.replace:hover {
+      background: #2563eb;
+    }
+
+    .action-btn.lock:hover {
+      background: #1f7a1f;
+    }
+
+    .replace-select {
+      position: absolute;
+      top: 8px;
+      right: 64px;
+      z-index: 11;
+      background: #393b3f;
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: none;
+      outline: none;
+      min-width: 180px;
+    }
+
+    .replace-select option {
+      background: #201e1e;
+      color: white;
     }
 
     .kill-btn {
@@ -368,6 +415,10 @@
       background: #1f7a1f;
     }
 
+    .card.locked .action-btn.lock {
+      display: none;
+    }
+
     /* =========================================================
    Info Button
 ========================================================= */
@@ -443,6 +494,10 @@
     .modal-close:hover {
       color: #dc2626;
     }
+
+    .hidden {
+      display: none !important;
+    }
   </style>
 </head>
 
@@ -474,7 +529,7 @@
       <option value="bomber.webp">Bomber Jet</option>
       <option value="stealth.webp">Stealth Jet</option>
     </select>
-
+<div class="toggles">
     <!-- 🆕 Voice Commands Toggle -->
     <div class="voice-toggle-label">
       <label class="voice-toggle" for="voice-toggle">
@@ -495,7 +550,7 @@
     <!-- Info Button -->
     <button class="info-btn" onclick="openInfoModal()">ℹ️</button>
   </div>
-
+</div>
   <div class="cards" id="cards"></div>
   <button class="clear-btn" id="clear-btn" onclick="clearAllCards()" style="display: none;">Clear All</button>
   <!-- Info Modal -->
@@ -504,7 +559,7 @@
       <button class="modal-close" onclick="closeInfoModal()">✕</button>
       <h2>How to use</h2>
       <p>Select a preset (map and mode) or add cards manually, kill stuff, set timers, never get backstabbed again.</p>
-      <br />
+      
       <h3>Tips</h3>
       <ul>
         <li>Voice commands are optional, you can use the buttons if you prefer.</li>
@@ -688,7 +743,7 @@
       { key: 'stealth', name: 'Stealth' }
     ];
 
-    // Used for voice commands
+    // Used for voice commands (PRESETS, KEYWORDS, ALIAS)
     const VOICE_TIMER_KEYWORDS = [
       "time", "prim", "camera", "thai", "i'm", "diam", "trying", "priv",
       "climate", "pine", "tire", "tiger", "tyler", "pilot", "find", "panel", "try"
@@ -866,18 +921,144 @@
       }
 
       // Insert a new card in the same position, then remove the old one
+      insertCardBeforeElement(oldCard, `./${toGroup.command}`, toGroup.name, oldCard.classList.contains('locked'));
+
+      // Remove old card (clears any interval)
+      removeCard(oldCard.id);
+      speak(`${fromGroup.name} replaced with ${toGroup.name}`);
+      console.log(`Replaced ${fromGroup.name} -> ${toGroup.name}`);
+      return true;
+    }
+
+
+
+    // ----------------------------
+    // Card actions (Replace dropdown + Lock)
+    // ----------------------------
+    function toggleReplaceMenu(cardId) {
+      const card = document.getElementById(cardId);
+      if (!card) return;
+
+      const select = document.getElementById(`${cardId}-replace`);
+      if (!select) return;
+
+      // Never replace a card with an active timer running
+      const timer = $('.timer', card);
+      if (timer && !isTimerInactive(timer)) {
+        console.log('Cannot replace while timer is running:', cardId);
+        return;
+      }
+
+      // Toggle visibility
+      const isOpen = select.style.display === 'block';
+      // Close all other open selects
+      $$('.replace-select').forEach(s => s.style.display = 'none');
+
+      select.style.display = isOpen ? 'none' : 'block';
+      select.value = "";
+    }
+
+    function replaceCardFromDropdown(cardId, toName) {
+      const card = document.getElementById(cardId);
+      const select = document.getElementById(`${cardId}-replace`);
+      if (select) select.style.display = 'none';
+
+      if (!card) return;
+      if (!toName) return;
+
+      const fromName = String(card.dataset.vehicle || '');
+      replaceSpecificCardByNames(card, fromName, toName);
+    }
+
+    function replaceSpecificCardByNames(oldCard, fromName, toName) {
+      const fromGroup = getVehicleGroupByName(fromName);
+      const toGroup = getVehicleGroupByName(toName);
+
+      if (!fromGroup || !toGroup) {
+        console.log("Unknown vehicles for replace:", fromName, toName);
+        return false;
+      }
+
+      // Never replace a card with an active timer running
+      const timer = $('.timer', oldCard);
+      if (timer && !isTimerInactive(timer)) {
+        console.log("Cannot replace while timer is running:", oldCard.id);
+        return false;
+      }
+
+      const locked = oldCard.classList.contains('locked');
+      insertCardBeforeElement(oldCard, `./${toGroup.command}`, toGroup.name, locked);
+
+      // Remove old card
+      removeCard(oldCard.id);
+
+      // speak(`${fromGroup.name} replaced with ${toGroup.name}`);
+      console.log(`Replaced ${fromGroup.name} -> ${toGroup.name}`);
+      return true;
+    }
+
+    function lockCard(cardId) {
+      const card = document.getElementById(cardId);
+      if (!card) return;
+
+      const timer = $('.timer', card);
+      if (timer && !isTimerInactive(timer)) {
+        console.log("Cannot lock while timer is running:", cardId);
+        return;
+      }
+
+      const vehicleName = card.dataset.vehicle;
+      const killBtn = $('.kill-btn', card);
+      const imgWrap = $('.card-image-container', card);
+      const label = $('.card-label', card); // first label
+
+      // Ensure it's visually "inactive"
+      if (imgWrap) imgWrap.classList.remove('dead');
+      if (killBtn) {
+        killBtn.style.display = 'block';
+        killBtn.textContent = 'Activate';
+      }
+
+      // Hide timer UI if somehow visible
+      const controls = $('.timer-controls', card);
+      if (timer) timer.style.display = 'none';
+      if (controls) controls.style.display = 'none';
+
+      card.classList.add('locked');
+      if (label) label.textContent = `🔒 "Activate ${vehicleName}"`;
+    }
+
+    function insertCardBeforeElement(referenceCard, image, name, locked = false) {
       cardId += 1;
       const newId = `card-${cardId}`;
+
+      const options = `
+              <option value="">Replace with…</option>
+              <option value="Scout">Scout Helicopter</option>
+              <option value="Attack">Attack Helicopter</option>
+              <option value="Transport">Transport Helicopter</option>
+              <option value="Bomber">Bomber Jet</option>
+              <option value="Stealth">Stealth Jet</option>
+      `;
+
       const cardHtml = `
-        <div class="card" id="${newId}" data-vehicle="${toGroup.name}">
+        <div class="card ${locked ? 'locked' : ''}" id="${newId}" data-vehicle="${name}">
           <div class="card-image-container">
             <div class="card-holder">
-              <div class="card-label">🕑 "Timer ${toGroup.name}"</div>
-              <div class="card-label">🗑️ "Remove ${toGroup.name}"</div>
+              <div class="card-label">${locked ? '🔒 "Activate ' + name + '"' : '🕑 "Timer ' + name + '"'}</div>
+              <div class="card-label">${'🗑️ "Remove ' + name + '"'}</div>
+              <div class="card-label">${'💱 "Replace ' + name + ' ..."'}</div>
             </div>
-            <button class="delete-btn" onclick="removeCard('${newId}')">🗑️</button>
-            <img src="./${toGroup.command}">
-            <button class="kill-btn">Unalive</button>
+            <div class="card-actions">
+              <button class="action-btn delete" title="Delete" onclick="removeCard('${newId}')">🗑️</button>
+              <button class="action-btn replace" title="Replace" onclick="toggleReplaceMenu('${newId}')">💱</button>
+              <button class="action-btn lock" title="Lock" onclick="lockCard('${newId}')">🔒</button>
+            </div>
+            <select class="replace-select" id="${newId}-replace" onchange="replaceCardFromDropdown('${newId}', this.value)">
+              ${options}
+            </select>
+            <img src="${image}">
+            <button class="kill-btn">${locked ? 'Activate' : 'Unalive'}</button>
             <div class="timer"></div>
             <div class="timer-controls">
               <button class="time-btn minus">-5</button>
@@ -887,17 +1068,18 @@
         </div>
       `;
 
-      oldCard.insertAdjacentHTML('beforebegin', cardHtml);
-      setupCard($(`#${newId}`));
-
-      // Remove old card (clears any interval)
-      removeCard(oldCard.id);
-
-      speak(`${fromGroup.name} replaced with ${toGroup.name}`);
-      console.log(`Replaced ${fromGroup.name} -> ${toGroup.name}`);
-      return true;
+      referenceCard.insertAdjacentHTML('beforebegin', cardHtml);
+      setupCard(document.getElementById(newId));
+      updateClearButton();
+      return newId;
     }
 
+    // Close any open replace dropdown when clicking elsewhere
+    document.addEventListener('click', (e) => {
+      const withinCardActions = e.target.closest && (e.target.closest('.card-actions') || e.target.closest('.replace-select'));
+      if (withinCardActions) return;
+      $$('.replace-select').forEach(s => s.style.display = 'none');
+    });
 
     // ----------------------------
     // TTS
@@ -1101,8 +1283,21 @@
             <div class="card-holder">
               <div class="card-label">${locked ? '🔒 "Activate ' + name + '"' : '🕑 "Timer ' + name + '"'}</div>
               <div class="card-label">${'🗑️ "Remove ' + name + '"'}</div>
+              <div class="card-label">${'💱 "Replace ' + name + ' ..."'}</div>
             </div>
-            <button class="delete-btn" onclick="removeCard('card-${cardId}')">🗑️</button>
+            <div class="card-actions">
+            <button class="action-btn delete" title="Delete" onclick="removeCard('card-${cardId}')">🗑️</button>
+            <button class="action-btn replace" title="Replace" onclick="toggleReplaceMenu('card-${cardId}')">💱</button>
+            <button class="action-btn lock" title="Lock" onclick="lockCard('card-${cardId}')">🔒</button>
+          </div>
+          <select class="replace-select" id="card-${cardId}-replace" onchange="replaceCardFromDropdown('card-${cardId}', this.value)">
+            <option value="">Replace with…</option>
+              <option value="Scout">Scout Helicopter</option>
+              <option value="Attack">Attack Helicopter</option>
+              <option value="Transport">Transport Helicopter</option>
+              <option value="Bomber">Bomber Jet</option>
+              <option value="Stealth">Stealth Jet</option>
+          </select>
             <img src="${image}">
             <button class="kill-btn">${locked ? 'Activate' : 'Unalive'}</button>
             <div class="timer"></div>
@@ -1138,7 +1333,7 @@
           card.classList.remove('locked');
           imgWrap.classList.remove('dead');
           killBtn.textContent = 'Unalive';
-          if (label) label.textContent = `🎤 Timer ${vehicleName}`;
+          if (label) label.textContent = `🕑 "Timer ${vehicleName}"`;
           return;
         }
 
@@ -1245,7 +1440,7 @@
         card.classList.remove('locked');
         killBtn.textContent = 'Unalive';
         imgWrap.classList.remove('dead');
-        if (label) label.textContent = `🎤 Timer ${vehicleName}`;
+        if (label) label.textContent = `🕑 "Timer ${vehicleName}"`;
 
         speak(`${vehicleName} activated`);
         console.log(`Activating ${vehicleName}`);

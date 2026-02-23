@@ -272,7 +272,7 @@
 
     .replace-select {
       position: absolute;
-      top: 8px;
+      top: 64px;
       right: 64px;
       z-index: 11;
       background: #393b3f;
@@ -283,6 +283,16 @@
       display: none;
       outline: none;
       min-width: 180px;
+       appearance: none;
+      padding: 16px;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='%23FFFFFF' viewBox='0 0 20 20'><path d='M7 10l5 5 5-5z'/><path fill='none' d='M0 0h24v24H0z'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 20px center;
+      background-size: 20px;
+      padding-right: 24px;
     }
 
     .replace-select option {

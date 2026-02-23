@@ -1,11 +1,7 @@
 Timers to keep track of enemy air for ethical purposes.  
 
 Vibecoded, unoptimized, amateur code - that works good enough.   
-Presets (maps & modes) - limited to Conquest and Escalation for now  
-Voice commands (desktop only)  
 
-    
-TTS callouts  
 <img width="2093" height="613" alt="image" src="https://github.com/user-attachments/assets/9532eaac-93ff-4b82-bea8-80d27817edc3" />   
   
   
@@ -17,6 +13,7 @@ See console logs to refine to work for your accent if you have issues (yeah no f
 1. Say "Timer Scout" a couple of times
 2. Edit timer keywords and scout keywords to whatever is spat out in logs
 3. Repeat for other vehicles and commands if you have recognition issues
+
 
 
 

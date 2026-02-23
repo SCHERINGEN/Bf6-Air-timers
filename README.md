@@ -1,12 +1,7 @@
 Timers to keep track of enemy air.
 
 
-
-
-
-
-
-Presets (maps & modes)
+Presets (maps & modes) - limited to Conquest and Escalation for now
 
 Voice commands (desktop only)
 

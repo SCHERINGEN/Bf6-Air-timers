@@ -1,4 +1,5 @@
-Timers to keep track of enemy air.  
+Timers to keep track of enemy air for ethical purposes.  
+
 Vibecoded, unoptimized, amateur code - that works good enough.   
 Presets (maps & modes) - limited to Conquest and Escalation for now  
 Voice commands (desktop only)  
@@ -16,6 +17,7 @@ See console logs to refine to work for your accent if you have issues (yeah no f
 1. Say "Timer Scout" a couple of times
 2. Edit timer keywords and scout keywords to whatever is spat out in logs
 3. Repeat for other vehicles and commands if you have recognition issues
+
 
 
 

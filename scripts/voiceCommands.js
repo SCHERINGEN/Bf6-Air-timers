@@ -41,6 +41,8 @@ function handleTranscript(transcript) {
     const [vehicle] = getGroupsInTranscriptOrder(transcript);
     if (vehicle) {
       addCardByName(vehicle.name);
+    } else {
+      console.log('Add command heard, but no vehicle matched.');
     }
     return;
   }
@@ -49,6 +51,8 @@ function handleTranscript(transcript) {
     const matches = getGroupsInTranscriptOrder(transcript);
     if (matches.length >= 2) {
       replaceCardByNames(matches[0].name, matches[1].name);
+    } else {
+      console.log('Replace command heard, but could not match two vehicles.');
     }
     return;
   }
@@ -93,6 +97,7 @@ export function toggleVoiceRecognition() {
       }
 
       const transcript = getTranscript(event);
+      console.log('Heard:', transcript);
       handleTranscript(transcript);
     };
 

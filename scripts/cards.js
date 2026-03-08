@@ -115,11 +115,13 @@ export function addCardByVehicleId(vehicleId, locked = false, insertBeforeCard =
 export function addCardByName(vehicleName) {
   const vehicle = getVehicleByName(vehicleName);
   if (!vehicle) {
+    console.log('Unknown vehicle for add:', vehicleName);
     return false;
   }
 
   addCardByVehicleId(vehicle.id, false);
   speak(`${vehicle.name} added`);
+  console.log(`Added ${vehicle.name}`);
   return true;
 }
 
@@ -191,11 +193,15 @@ export function findFirstRemovableCardByName(vehicleName) {
 export function handleVoiceTimerByVehicleName(vehicleName) {
   const vehicle = getVehicleByName(vehicleName);
   if (!vehicle) {
+    console.log('Unknown vehicle for timer:', vehicleName);
     return false;
   }
 
+  console.log('Close enough, unaliving:', vehicle.id);
+
   const card = findFirstAvailableCardByVehicleId(vehicle.id);
   if (!card) {
+    console.log(`No available ${vehicle.id}.webp card to unalive.`);
     return false;
   }
 
@@ -207,11 +213,13 @@ export function handleVoiceTimerByVehicleName(vehicleName) {
 export function removeCardByName(vehicleName) {
   const card = findFirstRemovableCardByName(vehicleName);
   if (!card) {
+    console.log(`No removable ${vehicleName} card found`);
     return false;
   }
 
   removeCard(card.id);
   speak(`${vehicleName} removed`);
+  console.log(`Removing ${vehicleName}`);
   return true;
 }
 
@@ -220,6 +228,7 @@ export function unlockCardByName(vehicleName) {
   const card = Array.from($$('.card.locked')).find(item => String(item.dataset.vehicle).toLowerCase() === wanted);
 
   if (!card) {
+    console.log(`No locked ${vehicleName} card found`);
     return false;
   }
 
@@ -234,6 +243,7 @@ export function unlockCardByName(vehicleName) {
   }
 
   speak(`${card.dataset.vehicle} activated`);
+  console.log(`Activating ${card.dataset.vehicle}`);
   return true;
 }
 
@@ -245,6 +255,7 @@ export function lockCard(cardId) {
 
   const { timer, controls, imgWrap, killBtn } = getCardElements(card);
   if (!isTimerInactive(timer)) {
+    console.log('Cannot lock while timer is running:', cardId);
     return;
   }
 
@@ -269,6 +280,7 @@ export function toggleReplaceMenu(cardId) {
 
   const timer = $('.timer', card);
   if (!isTimerInactive(timer)) {
+    console.log('Cannot replace while timer is running:', cardId);
     return;
   }
 
@@ -282,11 +294,14 @@ export function toggleReplaceMenu(cardId) {
 export function replaceSpecificCard(oldCard, toVehicleName) {
   const timer = $('.timer', oldCard);
   if (!isTimerInactive(timer)) {
+    console.log('Cannot replace while timer is running:', oldCard.id);
     return false;
   }
 
+  const fromName = String(oldCard.dataset.vehicle || '');
   const replacement = getVehicleByName(toVehicleName);
   if (!replacement) {
+    console.log('Unknown vehicles for replace:', fromName, toVehicleName);
     return false;
   }
 
@@ -294,6 +309,7 @@ export function replaceSpecificCard(oldCard, toVehicleName) {
   addCardByVehicleId(replacement.id, locked, oldCard);
   removeCard(oldCard.id);
   updateCardLabelsVisibility();
+  console.log(`Replaced ${fromName} -> ${replacement.name}`);
   return true;
 }
 
@@ -310,6 +326,7 @@ export function replaceCardFromDropdown(cardId, toVehicleName) {
 export function replaceCardByNames(fromName, toName) {
   const oldCard = findFirstRemovableCardByName(fromName);
   if (!oldCard) {
+    console.log(`No replaceable ${fromName} card found`);
     return false;
   }
 
